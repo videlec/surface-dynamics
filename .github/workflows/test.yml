@@ -10,13 +10,13 @@ jobs:
       matrix:
         include:
           - optionals: "sage, pplpy"
-            packages: "sagelib=8.8"
+            packages: "sagelib=8.8 ppl pplpy"
           - optionals: "sage, pplpy"
-            packages: "sagelib=8.9"
+            packages: "sagelib=8.9 ppl pplpy"
           - optionals: "sage, pplpy, mzv"
-            packages: "sagelib=9.1"
+            packages: "sagelib=9.1 ppl pplpy"
           - optionals: "sage, pplpy, mzv, gmpxxyy, pyeantic, pyintervalxt, sage_flatsurf"
-            packages: "sagelib=9.1 sage-flatsurf pyflatsurf>=1.1.0 pyeantic>=1.1.1 pyintervalxt>=3.1.0"
+            packages: "sagelib=9.1 ppl pplpy sage-flatsurf pyflatsurf>=1.1.0 pyeantic>=1.1.1 pyintervalxt>=3.1.0"
     steps:
       - uses: actions/checkout@v2
         with: { submodules: recursive }
