@@ -2,6 +2,39 @@ r"""
 Fat graph.
 
 This module is experimental.
+
+There are three ways to interpret the triple of permutations
+
+- as a fat graph with half edges, vertices and faces
+- its dual
+- as a bipartite quadrangulations
+
+And three associated types of paths whose alphabet are the half edges
+but with different adjacency rules
+
+- path in the primal (following edges) : (e(1), ..., e(n)) with vl[e(i+1)] = vl[ep[e(i)]]
+- path in the dual (transverse to edges) : (e(1), ..., e(n)) with fl[e(i+1)] = fl[ep[e(i)]]
+- path in the bipartite quadrangulation (that nicely generalize
+  the other two) : (e(1), ..., e(n)) with either vertex/face condition depending on the
+  parity
+
+Homotopies (with section)
+
+primal -> bipartite
+i      -> (i, fp[i])
+
+dual -> bipartite
+i    -> (i, vp^-1(i)) or (fp[i], ep[i])
+
+The bipartite encoding behaves nicely under edge contraction *and* edge
+removal. These correspond to either black or white foldings of quadrilaterals.
+On the path, we simply have to identify letters.
+
+After the maximal possible reduction we end up with an identification of
+H_1(S; Z) with integer vectors whose sum of entries is even.
+
+Formula for algebraic intersection (primal, dual, bipartite)
+
 """
 # ****************************************************************************
 #       Copyright (C) 2019 Vincent Delecroix <20100.delecroix@gmail.com>
@@ -100,6 +133,7 @@ class FatGraph(object):
                  '_fp',  # face permutation (array of length _n)
                  # labels
                  # TODO: add _el and care about folded edges!!
+                 '_el',  # edge labels
                  '_vl',  # vertex labels (array of length _n)
                  '_fl',  # face labels (array of length _n)
                  # numbers
@@ -2171,3 +2205,211 @@ class FatGraph(object):
 
         self._vl = vl
         self._fl = fl
+
+    def reverse_path(self, path):
+        r"""
+        Return the reverse of ``path``
+        """
+        ep = self._ep
+        rev_path = [ep[x] for x in reversed(path)]
+        imin = 0
+        for i in range(1, len(rev_path)):
+            if rev_path[i] < rev_path[imin]:
+                imin = i
+        if imin != 0:
+            rev_path = rev_path[imin:] + rev_path[:imin]
+        return rev_path
+
+    def edge_simple_circuits(self):
+        r"""
+        Iterator simple circuits in this graph up to base point and orientation.
+
+        A circuit is a closed path on the graph. It is called edge simple if it
+        does not pass twice through the same oriented edge.
+
+        EXAMPLES::
+
+            sage: from surface_dynamics.topology.fat_graph import FatGraph
+
+            sage: r = FatGraph(vp='(0,1,2)(3,4,5)', ep='(0,1)(2,3)(4,5)')
+            sage: for path in r.edge_simple_cycles(): print(path[:])
+            [0, 2, 4, 3]
+            [0, 2, 5, 3]
+            [4]
+
+        The hexagonal torus::
+
+            sage: r = FatGraph('(0,4,3)(1,2,5)', '(0,2)(1,3)(4,5)', '(0,1,4,2,3,5)')
+            sage: for path in r.edge_simple_cycles(): print(path[:])
+            [0, 5]
+            [0, 5, 3, 2, 4, 1]
+            [0, 1]
+            [0, 1, 4, 2, 3, 5]
+            [1, 4]
+
+        A genus two example::
+
+            sage: vertices = '(2,1,9)(8,5,7)(6,3,4)(10,12,0)(13,14,17)(15,16,11)'
+            sage: edges = '(0,1)(2,3)(4,5)(6,7)(8,9)(10,11)(12,13)(14,15)(16,17)'
+            sage: r = FatGraph(vp=vertices, ep=edges)
+            sage: sum(1 for _ in r.edge_simple_cycles())
+            154
+        """
+        n = self.num_darts()
+        ep = self._ep
+        vp = self._vp
+        vl = self._vl
+        to_avoid = [False] * n
+        path = [0]
+        to_avoid[0] = True
+        while True:
+            assert all(vl[ep[path[i]]] == vl[path[i+1]] for i in range(len(path)-1))
+
+            rev = ep[path[-1]]
+            if rev != path[0] and vl[rev] == vl[path[0]]:
+                if not to_avoid[ep[path[0]]] or path <= self.reverse_path(path):
+                    yield path
+
+            # try adding edge
+            candidate = vp[rev]
+            while candidate != rev and to_avoid[candidate]:
+                candidate = vp[candidate]
+            if candidate != rev:
+                path.append(candidate)
+                to_avoid[candidate] = True
+                continue
+
+            # remove
+            while len(path) >= 2:
+                last = path.pop()
+                to_avoid[last] = False
+                candidate = vp[last]
+                rev = ep[path[-1]]
+                while candidate != rev and to_avoid[candidate]:
+                    candidate = vp[candidate]
+                if candidate != rev:
+                    path.append(candidate)
+                    to_avoid[candidate] = True
+                    break
+
+            # forbid one more start
+            if len(path) == 1:
+                to_avoid[path[0]] = True
+                to_avoid[ep[path[0]]] = True
+                start = 0
+                while start < n and to_avoid[start]:
+                    start += 1
+                if start == n:
+                    return
+                path = [start]
+                to_avoid[start] = True
+
+
+    def vertex_simple_circuits(self):
+        r"""
+        Iterator through simple circuits in this graph up to base point and orientation.
+
+        A circuit is a closed path on the graph. It is called vertex simple if it
+        does not pass twice through the same vertex.
+
+        EXAMPLES::
+
+            sage: from surface_dynamics.topology.fat_graph import FatGraph
+
+            sage: r = FatGraph(vp='(0,1,2)(3,4,5)', ep='(0,3)(1,4)(2,5)')
+            sage: for path in r.vertex_simple_circuits(): print(path[:])
+            [0, 4]
+            [0, 5]
+            [1, 5]
+            [1, 3]
+            [2, 3]
+            [2, 4]
+
+        A genus two example::
+
+            sage: vertices = '(2,1,9)(8,5,7)(6,3,4)(10,12,0)(13,14,17)(15,16,11)'
+            sage: edges = '(0,1)(2,3)(4,5)(6,7)(8,9)(10,11)(12,13)(14,15)(16,17)'
+            sage: r = FatGraph(vp=vertices, ep=edges)
+            sage: sum(1 for _ in r.vertex_simple_circuits())
+            12
+        """
+        n = self.num_darts()
+        ep = self._ep
+        vp = self._vp
+        vl = self._vl
+        vertices = self.vertices()
+        to_avoid = [0] * len(vertices)
+
+        start = vertices[0][0]
+        while start > ep[start]:
+            start = vp[start]
+            if start == vertices[vl[start]][0]:
+                if vl[start] == len(vertices) - 1:
+                    return
+                start = vertices[vl[start] + 1][0]
+
+        path = [start] # sequence of half edges
+        to_avoid[vl[start]] = 1
+        to_avoid[vl[ep[start]]] = 2
+
+        while True:
+            assert path[0] == start
+            assert all(vl[ep[path[i]]] == vl[path[i+1]] for i in range(len(path)-1))
+            # print("BEGIN")
+            # print(" path", path)
+            # print(" to_avoid", [vert for av,vert in zip(to_avoid, vertices) if av == 2])
+
+            if to_avoid[vl[path[0]]] == 2:
+                # found circuit
+                # print(" found circuit")
+                yield path
+            else:
+                # try adding edge
+                rev = ep[path[-1]]
+                candidate = vp[rev]
+                assert to_avoid[vl[candidate]]
+                while candidate != rev and (to_avoid[vl[ep[candidate]]] == 2 or candidate < start or ep[candidate] < start):
+                    candidate = vp[candidate]
+                    assert to_avoid[vl[candidate]]
+                if candidate != rev:
+                    # print(" new edge", candidate)
+                    path.append(candidate)
+                    to_avoid[vl[ep[candidate]]] = 2
+                    continue
+
+            # remove
+            while len(path) >= 2:
+                last = path.pop()
+                # print(" pop edge", last) 
+                to_avoid[vl[ep[last]]] = 0
+                to_avoid[vl[path[0]]] = 1  # we reset the initial vertex in case a circuit was found
+                candidate = vp[last]
+                rev = ep[path[-1]]
+                assert to_avoid[vl[candidate]]
+                while candidate != rev and (to_avoid[vl[ep[candidate]]] == 2 or candidate < start or ep[candidate] < start):
+                    candidate = vp[candidate]
+                    assert to_avoid[vl[candidate]]
+                if candidate != rev:
+                    # print(" new edge", candidate)
+                    path.append(candidate)
+                    to_avoid[vl[ep[candidate]]] = 2
+                    break
+
+            # choose a new start and possibly forbid one more vertex
+            if len(path) == 1:
+                start = path[0]
+                assert to_avoid[vl[start]] >= 1 and to_avoid[vl[ep[start]]] == 2
+                to_avoid[vl[start]] = to_avoid[vl[ep[start]]] = 0
+                assert not any(to_avoid)
+                while True:
+                    start = vp[start]
+                    if start == vertices[vl[start]][0]:
+                        if vl[start] == len(vertices) - 1:
+                            return
+                        start = vertices[vl[start] + 1][0]
+                    if start < ep[start]:
+                        break
+                path[0] = start
+                to_avoid[vl[start]] = 1
+                to_avoid[vl[ep[start]]] = 2
+                # print(" new start", start)
