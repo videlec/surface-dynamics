@@ -16,10 +16,27 @@ kernelspec:
 
 The purpose of this notebook is to use Sage to assist in the classification of
 rank 2 invariant subvarieties in strata of translation surfaces in genus 3.
-This classification was already done through other methods by David Aulicino,
-Duc Man Nguyen, and Alex Wright, but the methods described here, which is used
-in my forthcoming PhD thesis, can be readily applied to other strata.
+The methods described here are the one used in the [PhD thesis of C.
+Zhang](https://deepblue.lib.umich.edu/handle/2027.42/177733). They are written
+for the stratum H(3, 1) but can be applied to other strata by running this
+notebook with different parameters.
 
+This classification was previously known via other methods by David Aulicino,
+Duc-Manh Nguyen and Alex Wright in a series of papers
+- D.-M. Nguyen, A. Wright,
+  "Non-Veech surfaces in H^hyp(4) are generic"
+  Geom. Funct. Anal. 24, No. 4, 1316-1335 (2014).
+  [journal](https://doi.org/10.1007/s00039-014-0297-0)
+  [arxiv](https://arxiv.org/abs/1306.4922)
+- D. Aulicino, D.-M. Nguyen, A. Wright "Classification of higher rank orbit closures in H^odd(4)", J. Eur. Math. Soc. 18, No. 8, 1855-1872 (2016).
+  [journal](https://doi.org/10.4171/JEMS/631)
+  [arxiv](https://arxiv.org/abs/1308.5879)
+- D. Aulicino, David, D.-M. Nguyen, "Rank two affine submanifolds in H(2,2) and H(3,1)", Geom. Topol. 20, No. 5, 2837-2904 (2016).
+  [journal](https://doi.org/10.2140/gt.2016.20.2837)
+  [arxiv](https://arxiv.org/abs/1501.03303)
+- D. Aulicino, D.-M. Nguyen, "Rank 2 affine manifolds in genus 3", J. Differ. Geom. 116, No. 2, 205-280 (2020)
+  [journal](https://doi.org/10.4310/jdg/1603936812)
+  [arxiv](https://arxiv.org/abs/1612.06970)
 Assume $\mathcal M$ is an invariant subvariety in a stratum $\mathcal H$. We
 will start with a horizontally periodic translation surface $M\in \mathcal M$.
 A database for the possible cylinder diagrams for $M$ can be found in
@@ -45,8 +62,6 @@ can set `singletons=False` if you do not want to allow cylinders in an $\cal
 M$-parallel class by themselves.
 
 ```{code-cell}
-from sage.all import Partitions, SetPartitions
-
 def list_partitions(n, m, singletons=True):
     """Return a list of all ways to partition the set [1..n] into m sets.
 
@@ -629,7 +644,7 @@ for i, (k, v) in enumerate(valid.items()):
 The following script goes through every component of strata in `strata`, every
 cylinder diagram with at least 4 cylinders, and checks all partitions for at
 least 2 $\cal M$-parallel classes. The output is saves to a folder called
-`output`. This output is used in my thesis to classify rank 2 invariant
+`output`. This output is used in the thesis of C. Zhang to classify rank 2 invariant
 subvarieties in some genus 3 strata.
 
 ```{code-cell}
