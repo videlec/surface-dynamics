@@ -25,8 +25,6 @@ is computed by an independent C program in ``normal_form.c``.
 from cpython.list cimport *
 from cpython.tuple cimport *
 
-from cpython cimport bool
-
 from libc.math cimport isnan
 
 # NOTE: This one line seems need to not get Cython confused on compilation...
@@ -1534,7 +1532,7 @@ cdef class Origami_dense_pyx:
         """
         cdef dict l_edges = self._l_edges
         cdef dict i_edges = self._i_edges
-        cdef bool VERBOSE=False
+        cdef VERBOSE = False
         cdef int i, n=self._n
         cdef size_t N = 2*self._n*sizeof(int)
         cdef set waiting = set([])
@@ -3667,7 +3665,7 @@ cdef gl2z_orbits(origamis, int n, int limit):
     cdef int *rrr = NULL
     cdef int *uuu = NULL
     cdef Origami_dense_pyx o, oo, ooo
-    cdef bool VERBOSE = False
+    cdef VERBOSE = False
 
     while origamis:
         o = origamis.pop()
